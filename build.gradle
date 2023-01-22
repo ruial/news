@@ -1,0 +1,50 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '7.1.2'
+    id 'application'
+}
+
+group 'com.briefbytes.news'
+version '1.0-SNAPSHOT'
+
+application {
+    mainClass = 'com.briefbytes.news.Main'
+}
+
+tasks.jar {
+    manifest.attributes["Main-Class"] = application.mainClass
+}
+
+shadowJar {
+    // required to prevent Lucene SPI error
+    mergeServiceFiles()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'io.javalin:javalin:5.2.0'
+    implementation 'org.webjars.npm:vue:3.2.45'
+    implementation 'org.webjars:bootstrap:5.2.3'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
+    implementation 'org.apache.lucene:lucene-core:9.4.2'
+    implementation 'org.apache.lucene:lucene-analysis-common:9.4.2'
+    implementation 'org.apache.lucene:lucene-queryparser:9.4.2'
+    implementation 'org.jsoup:jsoup:1.15.3'
+    implementation 'commons-cli:commons-cli:1.5.0'
+    implementation 'ch.qos.logback:logback-core:1.4.5'
+    implementation 'ch.qos.logback:logback-classic:1.4.5'
+    implementation 'org.slf4j:slf4j-api:2.0.6'
+    implementation 'co.elastic.clients:elasticsearch-java:8.6.0'
+    implementation 'org.apache.kafka:kafka-clients:3.3.1'
+    implementation 'org.apache.curator:curator-recipes:5.4.0'
+    implementation 'com.microsoft.playwright:playwright:1.29.0'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+}
+
+test {
+    useJUnitPlatform()
+}

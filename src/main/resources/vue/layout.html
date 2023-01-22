@@ -1,0 +1,70 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="/webjars/bootstrap/5.2.3/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    html,
+    body {
+      overflow-x: hidden;
+      /* Prevent scroll on narrow devices */
+    }
+
+    body {
+      padding-top: 56px;
+    }
+
+  </style>
+  <script src="/webjars/vue/3.2.45/dist/vue.global.prod.js"></script>
+  <script>
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString() + " " + date.toLocaleTimeString();
+    }
+    function loadSettings() {
+      console.log("called load settings")
+      const defaultSettings = {
+        maxAgeDays: 2,
+        maxCount: 20,
+        maxAgeDaysSearch: 7,
+        maxCountSearch: 5,
+        sortBy: "score"
+      }
+      return JSON.parse(localStorage.getItem("settings")) || defaultSettings;
+    }
+    function loadFavorites() {
+      console.log("called load settings")
+      // as I allow editing the favorites json in a text area, it may contain invalid json
+      try {
+        return JSON.parse(localStorage.getItem("favorites")) || [];
+      } catch (error) {
+        return [];
+      }
+    }
+    function buildQueryParams(maxCount, maxAgeDays) {
+      const date = new Date();
+      const endDate = date.getTime();
+      date.setDate(date.getDate() - maxAgeDays);
+      const startDate = date.getTime();
+      return `count=${maxCount}&startDate=${startDate}&endDate=${endDate}`; 
+    }
+    const app = Vue.createApp({});
+    app.config.globalProperties.formatDate = formatDate;
+  </script>
+  @componentRegistration
+</head>
+
+<body class="bg-light">
+  <main id="main-vue" v-cloak>
+    @routeComponent
+  </main>
+  <script>
+    app.mount("#main-vue");
+  </script>
+  <!-- <script src="/webjars/bootstrap/5.2.3/js/bootstrap.bundle.min.js"></script>
+<script src="/webjars/mozilla__readability/0.4.2/Readability.js"></script> -->
+</body>
+
+</html>

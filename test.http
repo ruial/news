@@ -1,0 +1,110 @@
+### Elasticsearch
+curl http://localhost:9200
+
+### List indices
+curl http://localhost:9200/_cat/indices?v
+
+### Get index
+curl http://localhost:9200/news
+
+### Delete index
+curl -XDELETE http://localhost:9200/news
+
+### Create index
+PUT http://localhost:9200/news
+Content-Type: application/json
+
+{
+  "settings": {
+    "analysis": {
+      "filter": {
+        "stopwords": {
+          "type": "stop",
+          "stopwords": "_english_"
+        }
+      },
+      "analyzer": {
+        "default": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "char_filter": [
+            "html_strip"
+          ],
+          "filter": [
+            "stopwords"
+          ]
+        },
+        "default_search": {
+          "type": "custom",
+          "tokenizer": "standard",
+          "char_filter": [
+            "html_strip"
+          ],
+          "filter": [
+            "stopwords"
+          ]
+        }
+      }
+    }
+  }
+}
+
+### Search index
+POST http://localhost:9200/news/_search
+Content-Type: application/json
+
+{
+  "query": { 
+    "match": { 
+      "content": "some" 
+    } 
+  }
+}
+
+###
+POST http://localhost:9200/news/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "multi_match" : {
+      "query" : "some",
+      "fields" : [ "title^3.0f", "content^5.0f" ] 
+    }
+  }
+}
+
+### Search with filters
+POST http://localhost:9200/news/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "bool": {
+      "filter": [
+        {
+          "range": {
+            "date": {
+              "lte": "2024-01-01"
+            }
+          }
+        },
+        {
+          "match": {
+            "seed": "me"
+          }
+        }
+      ]
+    }
+  },
+  "sort": [{"date": {"order": "desc"}}]
+}
+
+### Test analyzer
+POST http://localhost:9200/news/_analyze
+Content-Type: application/json
+
+{
+  "analyzer": "default_search",
+  "text": "<img src='img'>The Hello test</img>"
+}

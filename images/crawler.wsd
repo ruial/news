@@ -1,0 +1,29 @@
+@startuml crawler
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam defaultTextAlignment center
+
+rectangle Orchestrator
+rectangle SeedCrawler as "Seed Crawler"
+rectangle Seeds as "Seeds" {
+  rectangle Reddit
+  rectangle HN as "Hacker News"
+  rectangle RSS
+}
+queue QueueNews as "News URLs"
+collections Downloader as "Content Downloader"
+rectangle App
+database Index as "News\nIndex"
+actor User
+
+Orchestrator -> SeedCrawler
+SeedCrawler -up-> Reddit
+SeedCrawler -up-> HN
+SeedCrawler -up-> RSS
+SeedCrawler -> QueueNews
+QueueNews -down-> Downloader
+Downloader -left-> Index
+User -> App
+App -> Index
+
+@enduml

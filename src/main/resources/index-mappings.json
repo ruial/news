@@ -1,0 +1,36 @@
+{
+  "mappings": {
+    "properties": {
+      "id": {
+        "type": "keyword"
+      },
+      "seed": {
+        "type": "keyword"
+      },
+      "storyUrl": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text"
+      },
+      "commentsCount": {
+        "type": "integer"
+      },
+      "score": {
+        "type": "integer"
+      },
+      "date": {
+        "type": "date"
+      },
+      "contentFormat": {
+        "type": "keyword"
+      },
+      "commentsUrl": {
+        "type": "keyword"
+      },
+      "content": {
+        "type": "text"
+      }
+    }
+  }
+}

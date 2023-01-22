@@ -1,0 +1,74 @@
+services:
+  elasticsearch:
+    image: elasticsearch:8.6.0
+    container_name: elasticsearch
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - ./volumes/elasticsearch/data:/usr/share/elasticsearch/data
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - ./volumes/zookeeper/data:/var/lib/zookeeper/data
+      - ./volumes/zookeeper/log:/var/lib/zookeeper/log
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.1
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:29092"
+      - "9092:9092"
+      - "9101:9101"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_JMX_PORT: 9101
+      KAFKA_JMX_HOSTNAME: localhost
+    volumes:
+      - ./volumes/kafka/data:/var/lib/kafka/data
+
+  init-kafka:
+    image: confluentinc/cp-kafka:7.3.1
+    container_name: init-kafka
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      "
+      # blocks until kafka is reachable
+      kafka-topics --bootstrap-server kafka:29092 --list
+
+      # the partition count limits the number of parallel consumers
+      echo -e 'Creating kafka topics'
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic news --replication-factor 1 --partitions 3
+
+      echo -e 'Successfully created the following topics:'
+      kafka-topics --bootstrap-server kafka:29092 --list
+
+      # docker exec -it kafka bash
+      # kafka-console-consumer --bootstrap-server kafka:29092 --topic news --from-beginning --property print.key=true --property key.separator=":"
+      # kafka-consumer-groups --bootstrap-server kafka:29092 --describe --group news-group
+      # kafka-consumer-groups --bootstrap-server kafka:29092 --group news-group --reset-offsets --to-earliest --topic news --execute
+      # kafka-topics --bootstrap-server kafka:29092 --delete --topic news
+      "
+

@@ -32,8 +32,9 @@ app.component("seedcard", {
     }
   },
   created() {
-    const { maxCount, maxAgeDays } = this.settings;
-    const params = buildQueryParams(maxCount, maxAgeDays); 
+    // Elasticsearch can fetch up to 10_000 documents before having to paginate with search_after
+    const maxCount = 1000;
+    const params = buildQueryParams(maxCount, this.settings.maxAgeDays); 
     fetch(`/api/seeds/${encodeURIComponent(this.seed.seedName)}?${params}`).then(res => {
       if (res.ok) return res.json();
       return res.text().then(text => { throw new Error(text) });
@@ -44,8 +45,9 @@ app.component("seedcard", {
   },
   computed: {
     sortedNews() {
-      const sortBy = this.settings.sortBy;
-      return [...this.news.data].sort((a, b) => b[sortBy] - a[sortBy]);
+      // this sorting could happen on the server side to avoid fetching more documents
+      const { maxCount, sortBy } = this.settings;
+      return [...this.news.data].sort((a, b) => b[sortBy] - a[sortBy]).slice(0, maxCount);
     }
   }
 });

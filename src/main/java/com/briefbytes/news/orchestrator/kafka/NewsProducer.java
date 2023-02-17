@@ -12,7 +12,11 @@ import java.util.Properties;
 
 public class NewsProducer implements Closeable {
 
-    private static final String MAX_REQUESTS = "1";
+    // https://docs.confluent.io/platform/current/installation/configuration/producer-configs.html#enable-idempotence
+    private static final String IDEMPOTENCE = "true";
+    // if idempotence is disabled, MAX_REQUESTS should be 1 to avoid incorrect message ordering
+    // due to retries (enabled by default), but it would reduce throughput
+    private static final String MAX_REQUESTS = "5";
     private static final String REQUIRED_ACKS = "all";
 
     private KafkaProducer<String, News> producer;
@@ -21,6 +25,7 @@ public class NewsProducer implements Closeable {
     public NewsProducer(String bootstrapServers, String topic) {
         Properties kafkaProps = new Properties();
         kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        kafkaProps.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, IDEMPOTENCE);
         kafkaProps.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, MAX_REQUESTS);
         kafkaProps.put(ProducerConfig.ACKS_CONFIG, REQUIRED_ACKS);
         producer = new KafkaProducer<>(kafkaProps, new StringSerializer(), new JsonSerializer<>());

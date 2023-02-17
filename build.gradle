@@ -27,6 +27,7 @@ dependencies {
     implementation 'io.javalin:javalin:5.2.0'
     implementation 'org.webjars.npm:vue:3.2.45'
     implementation 'org.webjars:bootstrap:5.2.3'
+    implementation 'org.webjars.npm:mozilla__readability:0.4.2'
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.1'
     implementation 'org.apache.lucene:lucene-core:9.4.2'
     implementation 'org.apache.lucene:lucene-analysis-common:9.4.2'

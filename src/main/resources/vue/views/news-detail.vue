@@ -19,10 +19,11 @@
           </p>
         </div>
     
-        <div class="content" v-html="news.data.content"></div>
+        <div class="content" v-html="content"></div>
 
         <small class="links d-flex flex-wrap justify-content-between mt-4">
           <a :href="news.data.storyUrl" rel="nofollow">Original article</a>
+          <a href="#" @click.prevent="toggleReader">Toggle reader mode</a>
           <a href="#" @click.prevent="toggleFavorite"> {{ isFavorite ? "Remove" : "Add" }} favorite</a>
           <a :href="news.data.commentsUrl" rel="nofollow">All comments</a>
         </small>
@@ -54,25 +55,36 @@ app.component("news-detail", {
         loadError: null,
         data: {}
       },
+      readableContent: "",
+      readerEnabled: true,
       settings: loadSettings(),
       favorites: loadFavorites()
     }
   },
   created() {
-    const parts = document.URL.split('/');
+    const parts = document.URL.split("/");
     // handle potential trailing slash, part already encoded
     const newsId = parts.pop() || parts.pop();
     fetch(`/api/news/${newsId}`).then(res => {
       if (res.ok) return res.json();
       return res.text().then(text => { throw new Error(text) });
     })
-      .then(data => this.news.data = data)
+      .then(data => {
+        this.news.data = data;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.content, "text/html");
+        const article = new Readability(doc).parse();
+        this.readableContent = article.content;
+      })
       .catch(error => this.news.loadError = { "text": error })
       .finally(() => this.news.loading = false);
   },
   computed: {
     isFavorite() {
       return this.favorites.map(n => n.id).includes(this.news.data.id);
+    },
+    content() {
+      return this.readerEnabled ? this.readableContent : this.news.data.content;
     }
   },
   methods: {
@@ -87,6 +99,12 @@ app.component("news-detail", {
         this.favorites.push({ id, title, storyUrl, commentsUrl });
       }
       localStorage.setItem("favorites", JSON.stringify(this.favorites));
+    },
+    toggleReader() {
+      this.readerEnabled = !this.readerEnabled;
+      setTimeout(function() {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 10);
     },
     getRecos() {
       this.recos.loading = true;

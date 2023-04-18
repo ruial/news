@@ -1,16 +1,17 @@
 package com.briefbytes.news;
 
 import com.briefbytes.news.downloader.Downloader;
-import com.briefbytes.news.downloader.StaticDownloader;
 import com.briefbytes.news.downloader.DynamicDownloader;
+import com.briefbytes.news.downloader.StaticDownloader;
 import com.briefbytes.news.index.ElasticsearchIndexFactory;
 import com.briefbytes.news.index.Index;
 import com.briefbytes.news.index.LuceneIndexFactory;
-import com.briefbytes.news.orchestrator.*;
-import com.briefbytes.news.seed.HackerNews;
-import com.briefbytes.news.seed.Reddit;
-import com.briefbytes.news.seed.RssFeed;
+import com.briefbytes.news.orchestrator.DistributedOrchestratorFactory;
+import com.briefbytes.news.orchestrator.MultiThreadOrchestratorFactory;
+import com.briefbytes.news.orchestrator.Orchestrator;
+import com.briefbytes.news.orchestrator.OrchestratorFactory;
 import com.briefbytes.news.seed.Seed;
+import com.briefbytes.news.seed.SeedList;
 import com.briefbytes.news.ui.JavalinApp;
 import com.briefbytes.news.utils.CloseableUtils;
 import org.apache.commons.cli.*;
@@ -28,12 +29,14 @@ import java.util.concurrent.TimeUnit;
 public class Main {
 
     private static final Logger LOG = LoggerFactory.getLogger(Main.class);
+    private static final String DEFAULT_SEEDS_FILE = "seeds.json";
     private static final Duration DEFAULT_TIMEOUT_SECONDS = Duration.ofSeconds(5);
     private static final Duration DEFAULT_POLL_INTERVAL = Duration.ofMinutes(60);
     private static final int DEFAULT_PORT = 8080;
     private static final int DEFAULT_RETENTION_DAYS = 90;
     private static final String OPT_ROLES = "roles";
     private static final String OPT_DISTRIBUTED = "distributed";
+    private static final String OPT_SEEDS_FILE = "seeds";
     private static final String OPT_LUCENE_DIR = "lucene-dir";
     private static final String OPT_ELASTIC_HOST = "elastic-host";
     private static final String OPT_ZOOKEEPER_HOST = "zookeeper-host";
@@ -55,6 +58,7 @@ public class Main {
         Options options = new Options();
         options.addOption(Option.builder().longOpt(OPT_ROLES).hasArgs().required().build());
         options.addOption(Option.builder().longOpt(OPT_DISTRIBUTED).hasArg(false).build());
+        options.addOption(Option.builder().longOpt(OPT_SEEDS_FILE).hasArg().build());
         options.addOption(Option.builder().longOpt(OPT_LUCENE_DIR).hasArg().build());
         options.addOption(Option.builder().longOpt(OPT_ELASTIC_HOST).hasArg().build());
         options.addOption(Option.builder().longOpt(OPT_ZOOKEEPER_HOST).hasArg().build());
@@ -106,6 +110,7 @@ public class Main {
 
         boolean distributed = cmd.hasOption(OPT_DISTRIBUTED);
         List<String> roles = List.of(cmd.getOptionValues(OPT_ROLES));
+        String seedsFile = cmd.getOptionValue(OPT_SEEDS_FILE, DEFAULT_SEEDS_FILE);
         String luceneDir = cmd.getOptionValue(OPT_LUCENE_DIR);
         String elasticHost = cmd.getOptionValue(OPT_ELASTIC_HOST);
         String zookeeperHost = cmd.getOptionValue(OPT_ZOOKEEPER_HOST);
@@ -130,14 +135,14 @@ public class Main {
             closeables.add(dynamicDownloader);
         }
 
-        // TODO could load this from a config file supplied by an argument into a LinkedHashSet and allow filtering/reordering on the UI
-        List<Seed> seeds = List.of(
-                new HackerNews(staticDownloader),
-                new Reddit("programming", staticDownloader),
-                new RssFeed("briefbytes", "https://briefbytes.com", "https://briefbytes.com/atom.xml", staticDownloader, false),
-                new RssFeed("slashdot", "https://slashdot.org", "http://rss.slashdot.org/Slashdot/slashdotMain", staticDownloader, true),
-                new RssFeed("techcrunch", "https://techcrunch.com", "https://techcrunch.com/feed", staticDownloader, true)
-        );
+        // Load seeds from configuration file, always use the static http client to fetch data from APIs and rss feeds
+        List<Seed> seeds = null;
+        try {
+            seeds = SeedList.fromFile(seedsFile).getSeeds(staticDownloader);
+        } catch (IOException | IllegalArgumentException e) {
+            exit("Unable to parse seeds file", e);
+            return;
+        }
 
         // Use factories when creation of object is somewhat complex, some would prefer dependency injection
         final Index index;
@@ -167,7 +172,7 @@ public class Main {
                 return;
             }
             var scheduler = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "OrchestratorThread"));
-            var future = scheduler.scheduleAtFixedRate(orchestrator,0, pollInterval.toMinutes(), TimeUnit.MINUTES);
+            var future = scheduler.scheduleAtFixedRate(orchestrator, 0, pollInterval.toMinutes(), TimeUnit.MINUTES);
             closeables.add(() -> {
                 // would need to check if thread was interrupted inside the orchestrator
                 future.cancel(true);

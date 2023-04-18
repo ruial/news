@@ -14,10 +14,17 @@ tasks.jar {
     manifest.attributes["Main-Class"] = application.mainClass
 }
 
+task copyConfig(type: Copy) {
+    from "${rootProject.projectDir}/seeds.json"
+    into "build/libs"
+}
+
 shadowJar {
     // required to prevent Lucene SPI error
     mergeServiceFiles()
 }
+
+shadowJar.dependsOn copyConfig
 
 repositories {
     mavenCentral()

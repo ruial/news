@@ -1,0 +1,25 @@
+{
+  "seeds": [
+    {
+      "type": "hackernews"
+    },
+    {
+      "type": "reddit",
+      "subreddit": "programming"
+    },
+    {
+      "type": "rss",
+      "seedUrl": "https://briefbytes.com",
+      "seedName": "briefbytes",
+      "feedUrl": "https://briefbytes.com/atom.xml",
+      "fetchContent": false
+    },
+    {
+      "type": "rss",
+      "seedUrl": "https://techcrunch.com",
+      "seedName": "techcrunch",
+      "feedUrl": "https://techcrunch.com/feed",
+      "fetchContent": true
+    }
+  ]
+}

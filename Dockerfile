@@ -1,5 +1,6 @@
 FROM eclipse-temurin:17-alpine
 COPY news-1.0-SNAPSHOT-all.jar /app.jar
+COPY seeds.json .
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app.jar", "--roles=webserver", "--roles=orchestrator", "--distributed", \
     "--port=8080", "--elastic-host=http://elasticsearch:9200", "--zookeeper-host=zookeeper:2181", \
@@ -9,7 +10,7 @@ ENTRYPOINT ["java", "-jar", "/app.jar", "--roles=webserver", "--roles=orchestrat
 # For Playwright security considerations in Docker see https://playwright.dev/docs/docker#usage
 # FROM mcr.microsoft.com/playwright/java:v1.29.0-focal
 
-# ./gradlew run --args="--roles=orchestrator --roles=webserver --lucene-dir=volumes/lucene-index"
+# TERM=cygwin ./gradlew run --args="--roles=orchestrator --roles=webserver --lucene-dir=volumes/lucene-index"
 # ./gradlew shadowJar
 # java -jar build/libs/news-1.0-SNAPSHOT-all.jar --roles=orchestrator --roles=webserver --lucene-dir=volumes/lucene-index
 
